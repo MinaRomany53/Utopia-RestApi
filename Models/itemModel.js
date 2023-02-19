@@ -8,6 +8,8 @@ const itemSchema = new mongoose.Schema({
   coverImg: { type: String, required: true },
   imgs: { type: [String] },
   category: {
+    type: String,
+    required: true,
     enum: {
       values: [
         "Vehicles",
@@ -22,7 +24,6 @@ const itemSchema = new mongoose.Schema({
       message:
         "{VALUE} is not supported, You must choose category field from: Vehicles - Properties -    Electronics - Furniture - Books - Services - Accessories - Other",
     },
-    required: true,
   },
   address: { type: String, required: true },
   createAt: { type: Date, default: Date.now },
