@@ -6,7 +6,7 @@ const router = express.Router();
 router
   .route("/")
   .get(itemsController.getAllItems)
-  .post(itemsController.checkBody, itemsController.addNewItem);
+  .post(itemsController.addNewItem);
 
 router
   .route("/:itemId")
