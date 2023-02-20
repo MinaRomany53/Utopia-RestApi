@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 // Create Item Schema
 const itemSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String, required: true, trim: true },
   price: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, required: true, trim: true },
   coverImg: { type: String, required: true },
   imgs: { type: [String] },
   category: {
@@ -25,7 +25,7 @@ const itemSchema = new mongoose.Schema({
         "{VALUE} is not supported, You must choose category field from: Vehicles - Properties -    Electronics - Furniture - Books - Services - Accessories - Other",
     },
   },
-  address: { type: String, required: true },
+  address: { type: String, required: true, trim: true },
   createAt: { type: Date, default: Date.now },
   closed: { type: Boolean, default: false },
 
