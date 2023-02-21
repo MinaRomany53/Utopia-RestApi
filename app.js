@@ -24,4 +24,13 @@ app.use((req, res, next) => {
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/items", itemsRouter);
 
+// Handling Unhandled Routes
+app.all("*", (req, res, next) => {
+  res.status(404).json({
+    status: "Fail",
+    date: req.date,
+    message: `Can't find ${req.originalUrl} in this server!`,
+  });
+});
+
 module.exports = app;
