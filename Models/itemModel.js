@@ -3,14 +3,24 @@ const slugify = require("slugify");
 
 // Create Item Schema
 const itemSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
-  price: { type: Number, required: true },
-  description: { type: String, required: true, trim: true },
-  coverImg: { type: String, required: true },
+  title: {
+    type: String,
+    required: [true, "A tour must have a title"],
+    trim: true,
+    minLength: [8, "Minimum title length is 8 characters"],
+    maxLength: [40, "Maximum title length is 40 characters"],
+  },
+  price: { type: Number, required: [true, "A tour must have a price"] },
+  description: {
+    type: String,
+    required: [true, "A tour must have a description"],
+    trim: true,
+  },
+  coverImg: { type: String, required: [true, "A tour must have an Image"] },
   imgs: { type: [String] },
   category: {
     type: String,
-    required: true,
+    required: [true, "You must choose one category"],
     enum: {
       values: [
         "Vehicles",
@@ -23,7 +33,7 @@ const itemSchema = new mongoose.Schema({
         "Other",
       ],
       message:
-        "{VALUE} is not supported, You must choose category field from: Vehicles - Properties -    Electronics - Furniture - Books - Services - Accessories - Other",
+        "{VALUE} is not supported, You must choose category field from: Vehicles - Properties - Electronics - Furniture - Books - Services - Accessories - Other",
     },
   },
   address: { type: String, required: true, trim: true },
