@@ -3,6 +3,8 @@ const itemsController = require("../Controllers/itemsController");
 
 const router = express.Router();
 
+router.route("/Category-Stats").get(itemsController.getCategoryStats);
+
 router
   .route("/")
   .get(itemsController.getAllItems)

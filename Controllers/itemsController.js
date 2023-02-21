@@ -1,8 +1,58 @@
 const Item = require("../Models/itemModel");
+const ApiFeatures = require("../Utils/apiFeatures");
+
+exports.getCategoryStats = async (req, res) => {
+  try {
+    const statistics = await Item.aggregate([
+      {
+        $match: {},
+      },
+      {
+        $group: {
+          _id: "$category",
+          Number_Of_Items: { $sum: 1 },
+          Max_Price: { $max: "$price" },
+          Min_Price: { $min: "$price" },
+          Items: { $push: "$title" },
+        },
+      },
+      {
+        $sort: { Number_Of_Items: -1 },
+      },
+    ]);
+
+    console.log(statistics);
+
+    res.status(200).json({
+      status: "Success",
+      date: req.date,
+      results: statistics.length,
+      data: {
+        statistics: statistics,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "Fail",
+      date: req.date,
+      message: err.message,
+    });
+  }
+};
 
 exports.getAllItems = async (req, res) => {
   try {
-    const items = await Item.find({});
+    // Build Query step by step ( 1.Filtering  2.Sorting  3.Field Limiting  4.Pagination )
+    const features = new ApiFeatures(Item.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    // Execute Query
+    const items = await features.query;
+
+    // Send response (end req-res cycle)
     res.status(200).json({
       status: "Success",
       date: req.date,
