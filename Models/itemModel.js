@@ -55,8 +55,8 @@ itemSchema.pre("save", function (next) {
 
 // Query Middleware  - runs before find()
 itemSchema.pre(/^find/, function (next) {
-  this.find({ closed: { $ne: true } }); // not showing any secret tours
-  this.projection({ closed: 0 }); // not showing any secret tours
+  this.find({ closed: { $ne: true } }); // not showing any Closed Item
+  this.projection({ closed: 0 }); // not showing any Closed Item
   next();
 });
 
