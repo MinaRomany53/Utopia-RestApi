@@ -1,7 +1,8 @@
 const Item = require("../Models/itemModel");
 const ApiFeatures = require("../Utils/apiFeatures");
+const ApiErrors = require("../Utils/apiErrors");
 
-exports.getCategoryStats = async (req, res) => {
+exports.getCategoryStats = async (req, res, next) => {
   try {
     const statistics = await Item.aggregate([
       {
@@ -21,8 +22,6 @@ exports.getCategoryStats = async (req, res) => {
       },
     ]);
 
-    console.log(statistics);
-
     res.status(200).json({
       status: "Success",
       date: req.date,
@@ -32,22 +31,18 @@ exports.getCategoryStats = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: "Fail",
-      date: req.date,
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.getAllItems = async (req, res) => {
+exports.getAllItems = async (req, res, next) => {
   try {
     // Build Query step by step ( 1.Filtering  2.Sorting  3.Field Limiting  4.Pagination )
     const features = new ApiFeatures(Item.find(), req.query)
       .filter()
+      .paginate()
       .sort()
-      .limitFields()
-      .paginate();
+      .limitFields();
 
     // Execute Query
     const items = await features.query;
@@ -62,15 +57,11 @@ exports.getAllItems = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: "Fail",
-      date: req.date,
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.addNewItem = async (req, res) => {
+exports.addNewItem = async (req, res, next) => {
   try {
     const newItem = await Item.create(req.body);
     res.status(201).json({
@@ -79,90 +70,57 @@ exports.addNewItem = async (req, res) => {
       item: newItem,
     });
   } catch (err) {
-    res.status(400).json({
-      status: "Fail",
-      date: req.date,
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.getItem = async (req, res) => {
+exports.getItem = async (req, res, next) => {
   try {
     const item = await Item.findById(req.params.itemId);
-    if (!item) {
-      res.status(404).json({
-        status: "Fail",
-        date: req.date,
-        Message: "Invalid ID ❌",
-      });
-    } else {
-      res.status(200).json({
-        status: "Success",
-        date: req.date,
-        data: { item: item },
-      });
-    }
-  } catch (err) {
-    res.status(404).json({
-      status: "Fail",
+
+    if (!item) return next(new ApiErrors(404, `Invalid ID !`));
+
+    res.status(200).json({
+      status: "Success",
       date: req.date,
-      message: err.message,
+      data: { item: item },
     });
+  } catch (err) {
+    next(err);
   }
 };
 
-exports.updateItem = async (req, res) => {
+exports.updateItem = async (req, res, next) => {
   try {
     const item = await Item.findByIdAndUpdate(req.params.itemId, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!item) {
-      res.status(404).json({
-        status: "Fail",
-        date: req.date,
-        Message: "Invalid ID ❌",
-      });
-    } else {
-      res.status(200).json({
-        status: "Success",
-        date: req.date,
-        data: { item: item },
-      });
-    }
-  } catch (err) {
-    res.status(404).json({
-      status: "Fail",
+
+    if (!item) return next(new ApiErrors(404, `Invalid ID !`));
+
+    res.status(200).json({
+      status: "Success",
       date: req.date,
-      message: err.message,
+      data: { item: item },
     });
+  } catch (err) {
+    next(err);
   }
 };
 
-exports.deleteItem = async (req, res) => {
+exports.deleteItem = async (req, res, next) => {
   try {
     const deletedItem = await Item.findByIdAndDelete(req.params.itemId);
-    if (!deletedItem) {
-      res.status(404).json({
-        status: "Fail",
-        date: req.date,
-        data: {
-          Message: "Invalid Id ❌",
-        },
-      });
-    } else {
-      res.status(204).json({
-        status: "Success",
-        date: req.date,
-        data: null,
-      });
-    }
-  } catch (err) {
-    res.status(404).json({
-      status: "Fail",
+    console.log(deletedItem);
+    if (!deletedItem) return next(new ApiErrors(404, `Invalid ID !`));
+
+    res.status(204).json({
+      status: "Success",
       date: req.date,
-      message: err.message,
+      data: null,
     });
+  } catch (err) {
+    next(err);
   }
 };

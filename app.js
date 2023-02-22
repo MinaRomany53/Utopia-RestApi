@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const dotenv = require("dotenv").config({ path: "./config.env" }); // Get all env var in this file & save it
+const ApiErrors = require("./Utils/apiErrors");
 
 const usersRouter = require("./Routes/usersRoutes");
 const itemsRouter = require("./Routes/itemsRoutes");
@@ -26,16 +27,7 @@ app.use("/api/v1/items", itemsRouter);
 
 // Handling Unhandled Routes
 app.all("*", (req, res, next) => {
-  // res.status(404).json({
-  //   status: "Fail",
-  //   date: req.date,
-  //   message: `Can't find ${req.originalUrl} in this server!`,
-  // });
-
-  const err = new Error(`Can't find ${req.originalUrl} in this server!`);
-  err.statusCode = 404;
-  err.status = "Fail";
-  next(err);
+  next(new ApiErrors(404, `Can't find ${req.originalUrl} in this server!`)); // next(err)
 });
 
 // Error-Handling Middleware - Handling All Errors in the App
@@ -43,12 +35,28 @@ app.use((err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
   err.message = err.message || "Something Wrong happen";
-  res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message,
-    error: err,
-    stack: err.stack,
-  });
+
+  if (process.env.NODE_ENV === "development") {
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
+      error: err,
+      stack: err.stack,
+    });
+  } else if (process.env.NODE_ENV === "production") {
+    if (err.isOperational) {
+      res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message,
+      });
+    } else {
+      console.error("Error🔥❌", err);
+      res.status(500).json({
+        status: err.status,
+        message: "Something Wrong happen",
+      });
+    }
+  }
 });
 
 module.exports = app;
