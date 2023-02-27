@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -29,6 +30,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
+    unique: true,
     required: [true, "Phone Number is required!"],
     trim: true,
     minLength: [11, "Enter a valid number!"],
@@ -76,9 +78,18 @@ const userSchema = new mongoose.Schema({
 
 /* ------------------- Start Mongoose Middleware ------------------- */
 
-// Document Middleware  -  runs before create() and save()
+// Document Middleware - runs before create() and save()
+userSchema.pre("save", async function (next) {
+  // check first if the user modefied password or not
+  if (!this.isModified("password")) return next();
+  // Encrypt Password
+  this.password = await bcrypt.hash(this.password, 12);
+  // Don't save PasswordConfirmation in the DB
+  this.passwordConfirm = undefined;
+  next();
+});
 
-// Query Middleware  - runs before find()
+// Query Middleware - runs before find()
 
 // Aggregation Middleware  - runs before aggregate() only
 
