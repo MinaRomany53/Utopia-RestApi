@@ -2,6 +2,7 @@ const User = require("../Models/userModel");
 var jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const ApiErrors = require("../Utils/apiErrors");
+const { promisify } = require("util");
 
 exports.signup = async (req, res, next) => {
   try {
@@ -50,11 +51,11 @@ exports.login = async (req, res, next) => {
       return next(new ApiErrors(400, "Email and Password Required!"));
 
     const account = await User.findOne({ email: email }).select("+password");
-    if (!account) return next(new ApiErrors(401, "Sorry ,user not found!")); // Unauthorized!!
+    if (!account) return next(new ApiErrors(401, "Sorry ,user not found!"));
 
     const checkPassword = await bcrypt.compare(password, account.password);
     if (!checkPassword)
-      return next(new ApiErrors(401, "Sorry ,email or password is incorrect!")); // Unauthorized!!
+      return next(new ApiErrors(401, "Sorry ,email or password is incorrect!"));
 
     // Congratulations now we can Create new unique JWT as a passport to this user
     const token = jwt.sign({ id: account._id }, process.env.JWT_PRIVATE_KEY, {
@@ -83,3 +84,56 @@ exports.login = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.protect = async (req, res, next) => {
+  try {
+    // Check if Token exist first
+    let token;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) return next(new ApiErrors(401, "Please Login First!"));
+
+    // Verify this Token
+    const decodeToken = await promisify(jwt.verify)(
+      token,
+      process.env.JWT_PRIVATE_KEY
+    );
+
+    // Check if user still exist
+    const currentUser = await User.findById(decodeToken.id);
+    if (!currentUser)
+      return next(new ApiErrors(401, "This User no longer exist!"));
+
+    // Check if user change password after sending this Token
+    if (currentUser.passwordChangeAt) {
+      const tokenIssuedAt = decodeToken.iat; // seconds
+      const passChangedAt = currentUser.passwordChangeAt.getTime() / 1000; // seconds
+      if (tokenIssuedAt < passChangedAt) {
+        return next(
+          new ApiErrors(
+            401,
+            "This User change his Password, Please Login Again!"
+          )
+        );
+      }
+    }
+
+    // Move to next middleware to get the protected route
+    req.currentUser = currentUser; // use it to access Role of current user - next middleware
+    next();
+  } catch (err) {
+    if (err.name === "JsonWebTokenError")
+      err.message = "Invalid Token, Please Login Again!";
+    if (err.name === "TokenExpiredError")
+      err.message = "Your Token Expired, Please Login Again!";
+    err.statusCode = 401;
+    next(err);
+  }
+};
+
+exports.restrictTo = async (req, res, next) => {};
